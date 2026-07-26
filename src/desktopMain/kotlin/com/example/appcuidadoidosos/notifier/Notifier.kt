@@ -9,6 +9,7 @@ import java.util.TimerTask
 
 actual class Notifier {
     private val trayIcon: TrayIcon?
+    private val timers = mutableMapOf<String, Timer>()
 
     init {
         if (SystemTray.isSupported()) {
@@ -25,8 +26,8 @@ actual class Notifier {
         trayIcon?.displayMessage(title, message, TrayIcon.MessageType.INFO)
     }
 
-    actual fun scheduleNotification(hour: Int, minute: Int, title: String, message: String) {
-        val timer = Timer()
+    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
+        val timer = Timer(id)
         val task = object : TimerTask() {
             override fun run() {
                 showNotification(title, message)
@@ -41,5 +42,11 @@ actual class Notifier {
             }
         }
         timer.schedule(task, date.time, 1000 * 60 * 60 * 24) // Repeat daily
+        timers[id] = timer
+    }
+
+    actual fun cancelNotification(id: String) {
+        timers[id]?.cancel()
+        timers.remove(id)
     }
 }

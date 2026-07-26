@@ -42,14 +42,14 @@ actual class Notifier(private val context: Context) {
         notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
-    actual fun scheduleNotification(hour: Int, minute: Int, title: String, message: String) {
+    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             putExtra("title", title)
             putExtra("message", message)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            hour * 60 + minute, // Unique request code for each time
+            id.hashCode(), // Use a consistent request code based on the unique ID
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -69,5 +69,16 @@ actual class Notifier(private val context: Context) {
             AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
+    }
+
+    actual fun cancelNotification(id: String) {
+        val intent = Intent(context, NotificationReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
     }
 }

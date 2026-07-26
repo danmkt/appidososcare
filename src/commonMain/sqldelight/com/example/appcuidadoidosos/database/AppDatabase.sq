@@ -5,15 +5,19 @@ CREATE TABLE medications (
   frequency TEXT NOT NULL,
   reminder_time TEXT NOT NULL DEFAULT '08:00',
   isTaken INTEGER NOT NULL DEFAULT 0,
-  notes TEXT
+  notes TEXT,
+  notification_id TEXT
 );
 
 selectAllMedications:
 SELECT * FROM medications ORDER BY id DESC;
 
+getNotificationIdById:
+SELECT notification_id FROM medications WHERE id = ?;
+
 insertMedication:
-INSERT INTO medications(name, dosage, frequency, reminder_time, isTaken, notes)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO medications(name, dosage, frequency, reminder_time, isTaken, notes, notification_id)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 deleteMedicationById:
 DELETE FROM medications WHERE id = ?;

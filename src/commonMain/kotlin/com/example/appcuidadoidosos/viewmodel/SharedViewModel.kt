@@ -59,8 +59,9 @@ class SharedViewModel(
 
     fun addMedication(name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) {
         coroutineScope.launch {
+            val notificationId = "med_${System.currentTimeMillis()}"
             withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMedication(name, dosage, frequency, reminder_time, 0L, notes)
+                database.appDatabaseQueries.insertMedication(name, dosage, frequency, reminder_time, 0L, notes, notificationId)
             }
             refreshData()
 
@@ -70,7 +71,7 @@ class SharedViewModel(
                 val hour = timeParts[0].toIntOrNull()
                 val minute = timeParts[1].toIntOrNull()
                 if (hour != null && minute != null) {
-                    notifier.scheduleNotification(hour, minute, "Lembrete de Medicação", "Hora de tomar: $name")
+                    notifier.scheduleNotification(notificationId, hour, minute, "Lembrete de Medicação", "Hora de tomar: $name")
                 }
             }
         }
@@ -87,6 +88,12 @@ class SharedViewModel(
 
     fun deleteMedication(id: Long) {
         coroutineScope.launch {
+            val notificationId = withContext(Dispatchers.IO) {
+                database.appDatabaseQueries.getNotificationIdById(id).executeAsOneOrNull()?.notification_id
+            }
+            if (notificationId != null) {
+                notifier.cancelNotification(notificationId)
+            }
             withContext(Dispatchers.IO) {
                 database.appDatabaseQueries.deleteMedicationById(id)
             }

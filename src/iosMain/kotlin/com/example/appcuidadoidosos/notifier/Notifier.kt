@@ -42,7 +42,7 @@ actual class Notifier {
         }
     }
 
-    actual fun scheduleNotification(hour: Int, minute: Int, title: String, message: String) {
+    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)
             setBody(message)
@@ -54,13 +54,16 @@ actual class Notifier {
         }
         val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(dateComponents, repeats = true)
 
-        val uuid = NSUUID.UUID().UUIDString()
-        val request = UNNotificationRequest.requestWithIdentifier(uuid, content, trigger)
+        val request = UNNotificationRequest.requestWithIdentifier(id, content, trigger)
 
         notificationCenter.addNotificationRequest(request) { error ->
             if (error != null) {
                 println("Error scheduling notification: ${error.localizedDescription}")
             }
         }
+    }
+
+    actual fun cancelNotification(id: String) {
+        notificationCenter.removePendingNotificationRequestsWithIdentifiers(listOf(id))
     }
 }
