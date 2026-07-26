@@ -14,18 +14,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.appcuidadoidosos.database.AppDatabase
-import com.example.appcuidadoidosos.database.Meal_logs
-import com.example.appcuidadoidosos.database.Medications
-import com.example.appcuidadoidosos.database.Water_logs
 import com.example.appcuidadoidosos.ui.screens.DashboardScreen
 import com.example.appcuidadoidosos.ui.screens.MealScreen
 import com.example.appcuidadoidosos.ui.screens.MedicationScreen
 import com.example.appcuidadoidosos.ui.screens.WaterScreen
 import com.example.appcuidadoidosos.ui.theme.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.example.appcuidadoidosos.viewmodel.SharedViewModel
 
 sealed class Screen(val title: (AppStrings) -> String, val icon: ImageVector) {
     object Dashboard : Screen({ it.dashboard }, Icons.Default.Home)
@@ -35,124 +29,13 @@ sealed class Screen(val title: (AppStrings) -> String, val icon: ImageVector) {
 }
 
 @Composable
-fun App(database: AppDatabase) {
-    val coroutineScope = rememberCoroutineScope()
-
+fun App(viewModel: SharedViewModel) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
 
-    // State da aplicação
-    var medications by remember { mutableStateOf(emptyList<Medications>()) }
-    var waterLogs by remember { mutableStateOf(emptyList<Water_logs>()) }
-    var totalWaterMl by remember { mutableStateOf(0L) }
-    var mealLogs by remember { mutableStateOf(emptyList<Meal_logs>()) }
-
-    val todayDate = "2026-07-26" // Data para persistência
-
-    // Carregar dados do banco de dados
-    fun refreshData() {
-        coroutineScope.launch {
-            val (loadedMeds, loadedWater, loadedWaterTotal, loadedMeals) = withContext(Dispatchers.IO) {
-                val meds = database.appDatabaseQueries.selectAllMedications().executeAsList()
-                val water = database.appDatabaseQueries.selectWaterLogsByDate(todayDate).executeAsList()
-                val totalWaterResult = database.appDatabaseQueries.getTotalWaterByDate(todayDate).executeAsOne()
-                val meals = database.appDatabaseQueries.selectMealLogsByDate(todayDate).executeAsList()
-                Tuple4(meds, water, totalWaterResult.totalMl ?: 0L, meals)
-            }
-            medications = loadedMeds
-            waterLogs = loadedWater
-            totalWaterMl = loadedWaterTotal
-            mealLogs = loadedMeals
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        refreshData()
-    }
-
-    // Ações de Medicamentos
-    fun addMedication(name: String, dosage: String, frequency: String, timeOfDay: String, notes: String?) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMedication(name, dosage, frequency, timeOfDay, 0L, notes)
-            }
-            refreshData()
-        }
-    }
-
-    fun toggleMedicationTaken(id: Long, isTaken: Boolean) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.updateMedicationTakenStatus(if (isTaken) 1L else 0L, id)
-            }
-            refreshData()
-        }
-    }
-
-    fun deleteMedication(id: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteMedicationById(id)
-            }
-            refreshData()
-        }
-    }
-
-    fun resetAllMedicationsTaken() {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.resetMedicationsTakenStatus()
-            }
-            refreshData()
-        }
-    }
-
-    // Ações de Água
-    fun addWater(amountMl: Int) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                val timestamp = "12:00"
-                database.appDatabaseQueries.insertWaterLog(amountMl.toLong(), timestamp, todayDate)
-            }
-            refreshData()
-        }
-    }
-
-    fun deleteWaterLog(id: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteWaterLogById(id)
-            }
-            refreshData()
-        }
-    }
-
-    // Ações de Refeições
-    fun addMeal(mealType: String, description: String, time: String) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMealLog(mealType, description, time, todayDate, 1L)
-            }
-            refreshData()
-        }
-    }
-
-    fun toggleMealConsumed(id: Long, isConsumed: Boolean) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.updateMealConsumedStatus(if (isConsumed) 1L else 0L, id)
-            }
-            refreshData()
-        }
-    }
-
-    fun deleteMeal(id: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteMealLogById(id)
-            }
-            refreshData()
-        }
-    }
+    val medications by viewModel.medications.collectAsState()
+    val waterLogs by viewModel.waterLogs.collectAsState()
+    val totalWaterMl by viewModel.totalWaterMl.collectAsState()
+    val mealLogs by viewModel.mealLogs.collectAsState()
 
     ElderCareTheme {
         val strings = LocalStrings.current
@@ -221,30 +104,28 @@ fun App(database: AppDatabase) {
 
                     Screen.Medications -> MedicationScreen(
                         medications = medications,
-                        onAddMedication = ::addMedication,
-                        onToggleTaken = ::toggleMedicationTaken,
-                        onDeleteMedication = ::deleteMedication,
-                        onResetAllTaken = ::resetAllMedicationsTaken
+                        onAddMedication = viewModel::addMedication,
+                        onToggleTaken = viewModel::toggleMedicationTaken,
+                        onDeleteMedication = viewModel::deleteMedication,
+                        onResetAllTaken = viewModel::resetAllMedicationsTaken
                     )
 
                     Screen.Water -> WaterScreen(
                         waterLogs = waterLogs,
                         totalWaterMl = totalWaterMl,
                         dailyGoalMl = 2000L,
-                        onAddWater = ::addWater,
-                        onDeleteWaterLog = ::deleteWaterLog
+                        onAddWater = viewModel::addWater,
+                        onDeleteWaterLog = viewModel::deleteWaterLog
                     )
 
                     Screen.Meals -> MealScreen(
                         mealLogs = mealLogs,
-                        onAddMeal = ::addMeal,
-                        onToggleConsumed = ::toggleMealConsumed,
-                        onDeleteMeal = ::deleteMeal
+                        onAddMeal = viewModel::addMeal,
+                        onToggleConsumed = viewModel::toggleMealConsumed,
+                        onDeleteMeal = viewModel::deleteMeal
                     )
                 }
             }
         }
     }
 }
-
-private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)

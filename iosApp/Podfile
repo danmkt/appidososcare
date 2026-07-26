@@ -3,4 +3,5 @@ target 'iosApp' do
   use_frameworks!
   platform :ios, '14.1'
   pod 'shared', :path => '../'
+  pod 'KMPNativeCoroutines_Core', :path => '../'
 end

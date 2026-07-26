@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.compose") version "1.6.1"
     id("com.android.library") version "8.2.0"
     id("app.cash.sqldelight") version "2.0.1"
+    id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-26"
 }
 
 kotlin {
@@ -41,6 +42,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.components.resources)
                 implementation("app.cash.sqldelight:runtime:2.0.1")
+                implementation("com.rickclephas.kmp:kmp-native-coroutines-core:1.0.0-ALPHA-26")
             }
         }
         val androidMain by getting {
