@@ -27,11 +27,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-sealed class Screen(val title: String, val icon: ImageVector) {
-    object Dashboard : Screen("Resumo", Icons.Default.Home)
-    object Medications : Screen("Remédios", Icons.Default.Favorite)
-    object Water : Screen("Água", Icons.Default.Info)
-    object Meals : Screen("Refeições", Icons.Default.List)
+sealed class Screen(val title: (AppStrings) -> String, val icon: ImageVector) {
+    object Dashboard : Screen({ it.dashboard }, Icons.Default.Home)
+    object Medications : Screen({ it.medication }, Icons.Default.Favorite)
+    object Water : Screen({ it.water }, Icons.Default.Info)
+    object Meals : Screen({ it.meals }, Icons.Default.List)
 }
 
 @Composable
@@ -155,6 +155,7 @@ fun App(database: AppDatabase) {
     }
 
     ElderCareTheme {
+        val strings = LocalStrings.current
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -181,13 +182,13 @@ fun App(database: AppDatabase) {
                             icon = {
                                 Icon(
                                     imageVector = screen.icon,
-                                    contentDescription = screen.title,
+                                    contentDescription = screen.title(strings),
                                     modifier = Modifier.size(28.dp)
                                 )
                             },
                             label = {
                                 Text(
-                                    screen.title,
+                                    screen.title(strings),
                                     fontSize = 13.sp,
                                     fontWeight = if (currentScreen == screen) FontWeight.Bold else FontWeight.Normal
                                 )
