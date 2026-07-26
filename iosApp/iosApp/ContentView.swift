@@ -5,6 +5,7 @@ import KMPNativeCoroutinesAsync
 @MainActor
 class ContentViewModel: ObservableObject {
     private let viewModel: SharedViewModel
+    private let notifier: Notifier
     
     @Published var medications: [Medications] = []
     @Published var totalWaterMl: Int = 0
@@ -14,6 +15,8 @@ class ContentViewModel: ObservableObject {
             database: AppDatabase(driver: DatabaseDriverFactory().createDriver()),
             coroutineScope: CoroutineScope(context: Dispatchers.Main)
         )
+        self.notifier = Notifier()
+        self.notifier.requestAuthorization()
         
         Task {
             let stream = asyncStream(for: viewModel.medications)
@@ -33,6 +36,10 @@ class ContentViewModel: ObservableObject {
     func addWater() {
         viewModel.addWater(amountMl: 250)
     }
+    
+    func testNotification() {
+        notifier.showNotification(title: "Teste iOS", message: "Esta é uma notificação de teste.")
+    }
 }
 
 struct ContentView: View {
@@ -46,6 +53,11 @@ struct ContentView: View {
                 viewModel.addWater()
             }) {
                 Text("Adicionar Água")
+            }
+            Button(action: {
+                viewModel.testNotification()
+            }) {
+                Text("Testar Notificação")
             }
         }
     }

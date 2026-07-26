@@ -8,12 +8,14 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appcuidadoidosos.notifier.Notifier
 import com.example.appcuidadoidosos.ui.screens.DashboardScreen
 import com.example.appcuidadoidosos.ui.screens.MealScreen
 import com.example.appcuidadoidosos.ui.screens.MedicationScreen
@@ -29,7 +31,7 @@ sealed class Screen(val title: (AppStrings) -> String, val icon: ImageVector) {
 }
 
 @Composable
-fun App(viewModel: SharedViewModel) {
+fun App(viewModel: SharedViewModel, notifier: Notifier) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
 
     val medications by viewModel.medications.collectAsState()
@@ -91,16 +93,24 @@ fun App(viewModel: SharedViewModel) {
                     .padding(paddingValues)
             ) {
                 when (currentScreen) {
-                    Screen.Dashboard -> DashboardScreen(
-                        waterTotalMl = totalWaterMl,
-                        waterGoalMl = 2000L,
-                        medicationsTakenCount = medications.count { it.isTaken != 0L },
-                        medicationsTotalCount = medications.size,
-                        mealsLoggedCount = mealLogs.size,
-                        onNavigateToWater = { currentScreen = Screen.Water },
-                        onNavigateToMedications = { currentScreen = Screen.Medications },
-                        onNavigateToMeals = { currentScreen = Screen.Meals }
-                    )
+                    Screen.Dashboard -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        DashboardScreen(
+                            waterTotalMl = totalWaterMl,
+                            waterGoalMl = 2000L,
+                            medicationsTakenCount = medications.count { it.isTaken != 0L },
+                            medicationsTotalCount = medications.size,
+                            mealsLoggedCount = mealLogs.size,
+                            onNavigateToWater = { currentScreen = Screen.Water },
+                            onNavigateToMedications = { currentScreen = Screen.Medications },
+                            onNavigateToMeals = { currentScreen = Screen.Meals }
+                        )
+                        // TODO: Remove this test button
+                        Button(onClick = {
+                            notifier.showNotification("Teste", "Esta é uma notificação de teste.")
+                        }) {
+                            Text("Testar Notificação")
+                        }
+                    }
 
                     Screen.Medications -> MedicationScreen(
                         medications = medications,

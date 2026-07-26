@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.DatabaseDriverFactory
+import com.example.appcuidadoidosos.notifier.Notifier
 import com.example.appcuidadoidosos.viewmodel.SharedViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -13,8 +14,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val database = AppDatabase(DatabaseDriverFactory(applicationContext).createDriver())
         val viewModel = SharedViewModel(database, lifecycleScope)
+        val notifier = Notifier(applicationContext)
         setContent {
-            App(viewModel)
+            App(viewModel, notifier)
         }
     }
 }
