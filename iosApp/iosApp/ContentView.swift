@@ -12,7 +12,7 @@ class ContentViewModel: ObservableObject {
     @Published var totalWaterMl: Int = 0
     
     init() {
-        let notifier = Notifier()
+        let notifier = IosNotifier()
         self.sharedViewModel = SharedViewModel(
             database: AppDatabase(driver: DatabaseDriverFactory().createDriver()),
             notifier: notifier,

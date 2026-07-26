@@ -11,7 +11,7 @@ import platform.UserNotifications.UNUserNotificationCenter
 import platform.darwin.NSRunLoop
 import platform.darwin.NSUUID
 
-actual class Notifier {
+class IosNotifier : Notifier {
 
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
 
@@ -27,7 +27,7 @@ actual class Notifier {
         }
     }
 
-    actual fun showNotification(title: String, message: String) {
+    override fun showNotification(title: String, message: String) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)
             setBody(message)
@@ -42,7 +42,7 @@ actual class Notifier {
         }
     }
 
-    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
+    override fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)
             setBody(message)
@@ -63,7 +63,7 @@ actual class Notifier {
         }
     }
 
-    actual fun cancelNotification(id: String) {
+    override fun cancelNotification(id: String) {
         notificationCenter.removePendingNotificationRequestsWithIdentifiers(listOf(id))
     }
 }

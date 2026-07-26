@@ -5,14 +5,14 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.DatabaseDriverFactory
-import com.example.appcuidadoidosos.notifier.Notifier
+import com.example.appcuidadoidosos.notifier.DesktopNotifier
 import com.example.appcuidadoidosos.viewmodel.SharedViewModel
 
 fun main() = application {
     val database = AppDatabase(DatabaseDriverFactory().createDriver())
     Window(onCloseRequest = ::exitApplication, title = "app-cuidado-idosos") {
         val coroutineScope = rememberCoroutineScope()
-        val notifier = Notifier()
+        val notifier = DesktopNotifier()
         val viewModel = SharedViewModel(database, notifier, coroutineScope)
         App(viewModel, notifier)
     }

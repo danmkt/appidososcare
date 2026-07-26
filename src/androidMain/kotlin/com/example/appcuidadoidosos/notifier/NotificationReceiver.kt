@@ -8,7 +8,7 @@ class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val title = intent.getStringExtra("title") ?: "Lembrete"
         val message = intent.getStringExtra("message") ?: "Hora de cuidar da saúde!"
-        val notifier = Notifier(context)
+        val notifier = AndroidNotifier(context)
         notifier.showNotification(title, message)
     }
 }

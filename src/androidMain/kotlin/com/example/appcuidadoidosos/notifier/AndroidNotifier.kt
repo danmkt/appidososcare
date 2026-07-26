@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.example.appcuidadoidosos.R
 import java.util.Calendar
 
-actual class Notifier(private val context: Context) {
+class AndroidNotifier(private val context: Context) : Notifier {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
     private val channelId = "elderly_care_channel"
@@ -32,7 +32,7 @@ actual class Notifier(private val context: Context) {
         }
     }
 
-    actual fun showNotification(title: String, message: String) {
+    override fun showNotification(title: String, message: String) {
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -42,7 +42,7 @@ actual class Notifier(private val context: Context) {
         notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
-    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
+    override fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             putExtra("title", title)
             putExtra("message", message)
@@ -71,7 +71,7 @@ actual class Notifier(private val context: Context) {
         )
     }
 
-    actual fun cancelNotification(id: String) {
+    override fun cancelNotification(id: String) {
         val intent = Intent(context, NotificationReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,

@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.DatabaseDriverFactory
-import com.example.appcuidadoidosos.notifier.Notifier
+import com.example.appcuidadoidosos.notifier.AndroidNotifier
 import com.example.appcuidadoidosos.viewmodel.SharedViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         askNotificationPermission()
 
         val database = AppDatabase(DatabaseDriverFactory(applicationContext).createDriver())
-        val notifier = Notifier(applicationContext)
+        val notifier = AndroidNotifier(applicationContext)
         val viewModel = SharedViewModel(database, notifier, lifecycleScope)
         setContent {
             App(viewModel, notifier)

@@ -7,7 +7,7 @@ import java.util.Calendar
 import java.util.Timer
 import java.util.TimerTask
 
-actual class Notifier {
+class DesktopNotifier : Notifier {
     private val trayIcon: TrayIcon?
     private val timers = mutableMapOf<String, Timer>()
 
@@ -22,11 +22,11 @@ actual class Notifier {
         }
     }
 
-    actual fun showNotification(title: String, message: String) {
+    override fun showNotification(title: String, message: String) {
         trayIcon?.displayMessage(title, message, TrayIcon.MessageType.INFO)
     }
 
-    actual fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
+    override fun scheduleNotification(id: String, hour: Int, minute: Int, title: String, message: String) {
         val timer = Timer(id)
         val task = object : TimerTask() {
             override fun run() {
@@ -45,7 +45,7 @@ actual class Notifier {
         timers[id] = timer
     }
 
-    actual fun cancelNotification(id: String) {
+    override fun cancelNotification(id: String) {
         timers[id]?.cancel()
         timers.remove(id)
     }
