@@ -19,6 +19,11 @@ local.properties
 *.iml
 .DS_Store
 
+# SQLite local database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
 # Other
 captures/
-gradle/wrapper/gradle-wrapper.jar

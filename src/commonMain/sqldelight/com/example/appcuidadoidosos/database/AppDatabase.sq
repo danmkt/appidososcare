@@ -3,5 +3,67 @@ CREATE TABLE medications (
   name TEXT NOT NULL,
   dosage TEXT NOT NULL,
   frequency TEXT NOT NULL,
+  timeOfDay TEXT NOT NULL DEFAULT '08:00',
+  isTaken INTEGER NOT NULL DEFAULT 0,
   notes TEXT
 );
+
+selectAllMedications:
+SELECT * FROM medications ORDER BY id DESC;
+
+insertMedication:
+INSERT INTO medications(name, dosage, frequency, timeOfDay, isTaken, notes)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteMedicationById:
+DELETE FROM medications WHERE id = ?;
+
+updateMedicationTakenStatus:
+UPDATE medications SET isTaken = ? WHERE id = ?;
+
+resetMedicationsTakenStatus:
+UPDATE medications SET isTaken = 0;
+
+
+CREATE TABLE water_logs (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  amountMl INTEGER NOT NULL,
+  timestamp TEXT NOT NULL,
+  date TEXT NOT NULL
+);
+
+selectWaterLogsByDate:
+SELECT * FROM water_logs WHERE date = ? ORDER BY id DESC;
+
+insertWaterLog:
+INSERT INTO water_logs(amountMl, timestamp, date)
+VALUES (?, ?, ?);
+
+deleteWaterLogById:
+DELETE FROM water_logs WHERE id = ?;
+
+getTotalWaterByDate:
+SELECT COALESCE(SUM(amountMl), 0) AS totalMl FROM water_logs WHERE date = ?;
+
+
+CREATE TABLE meal_logs (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  mealType TEXT NOT NULL,
+  description TEXT NOT NULL,
+  time TEXT NOT NULL,
+  date TEXT NOT NULL,
+  isConsumed INTEGER NOT NULL DEFAULT 1
+);
+
+selectMealLogsByDate:
+SELECT * FROM meal_logs WHERE date = ? ORDER BY id DESC;
+
+insertMealLog:
+INSERT INTO meal_logs(mealType, description, time, date, isConsumed)
+VALUES (?, ?, ?, ?, ?);
+
+deleteMealLogById:
+DELETE FROM meal_logs WHERE id = ?;
+
+updateMealConsumedStatus:
+UPDATE meal_logs SET isConsumed = ? WHERE id = ?;
