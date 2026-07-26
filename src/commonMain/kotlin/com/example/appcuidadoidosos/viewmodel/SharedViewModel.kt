@@ -4,6 +4,7 @@ import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.Meal_logs
 import com.example.appcuidadoidosos.database.Medications
 import com.example.appcuidadoidosos.database.Water_logs
+import com.example.appcuidadoidosos.notifier.Notifier
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +13,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SharedViewModel(private val database: AppDatabase, private val coroutineScope: CoroutineScope) {
+class SharedViewModel(
+    private val database: AppDatabase,
+    private val notifier: Notifier,
+    private val coroutineScope: CoroutineScope
+) {
 
     private val _medications = MutableStateFlow<List<Medications>>(emptyList())
     @NativeCoroutines
@@ -52,12 +57,22 @@ class SharedViewModel(private val database: AppDatabase, private val coroutineSc
         }
     }
 
-    fun addMedication(name: String, dosage: String, frequency: String, timeOfDay: String, notes: String?) {
+    fun addMedication(name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) {
         coroutineScope.launch {
             withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMedication(name, dosage, frequency, timeOfDay, 0L, notes)
+                database.appDatabaseQueries.insertMedication(name, dosage, frequency, reminder_time, 0L, notes)
             }
             refreshData()
+
+            // Schedule notification
+            val timeParts = reminder_time.split(":")
+            if (timeParts.size == 2) {
+                val hour = timeParts[0].toIntOrNull()
+                val minute = timeParts[1].toIntOrNull()
+                if (hour != null && minute != null) {
+                    notifier.scheduleNotification(hour, minute, "Lembrete de Medicação", "Hora de tomar: $name")
+                }
+            }
         }
     }
 

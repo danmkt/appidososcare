@@ -23,7 +23,7 @@ import com.example.appcuidadoidosos.ui.theme.*
 @Composable
 fun MedicationScreen(
     medications: List<Medications>,
-    onAddMedication: (name: String, dosage: String, frequency: String, timeOfDay: String, notes: String?) -> Unit,
+    onAddMedication: (name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) -> Unit,
     onToggleTaken: (id: Long, isTaken: Boolean) -> Unit,
     onDeleteMedication: (id: Long) -> Unit,
     onResetAllTaken: () -> Unit
@@ -103,8 +103,8 @@ fun MedicationScreen(
     if (showAddDialog) {
         AddMedicationDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { name, dosage, frequency, timeOfDay, notes ->
-                onAddMedication(name, dosage, frequency, timeOfDay, notes)
+            onConfirm = { name, dosage, frequency, reminder_time, notes ->
+                onAddMedication(name, dosage, frequency, reminder_time, notes)
                 showAddDialog = false
             }
         )
@@ -153,7 +153,7 @@ fun MedicationCardItem(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Dose: ${medication.dosage}  |  Horário: ${medication.timeOfDay}",
+                    text = "Dose: ${medication.dosage}  |  Horário: ${medication.reminder_time}",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = PrimaryDark
@@ -186,12 +186,12 @@ fun MedicationCardItem(
 @Composable
 fun AddMedicationDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, dosage: String, frequency: String, timeOfDay: String, notes: String?) -> Unit
+    onConfirm: (name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
     var frequency by remember { mutableStateOf("") }
-    var timeOfDay by remember { mutableStateOf("08:00") }
+    var reminder_time by remember { mutableStateOf("08:00") }
     var notes by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -222,8 +222,8 @@ fun AddMedicationDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
-                    value = timeOfDay,
-                    onValueChange = { timeOfDay = it },
+                    value = reminder_time,
+                    onValueChange = { reminder_time = it },
                     label = { Text("Horário (ex: 08:00)") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -245,7 +245,7 @@ fun AddMedicationDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank() && dosage.isNotBlank()) {
-                        onConfirm(name, dosage, frequency, timeOfDay, notes.ifBlank { null })
+                        onConfirm(name, dosage, frequency, reminder_time, notes.ifBlank { null })
                     }
                 },
                 enabled = name.isNotBlank() && dosage.isNotBlank(),

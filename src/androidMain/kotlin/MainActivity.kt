@@ -13,8 +13,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val database = AppDatabase(DatabaseDriverFactory(applicationContext).createDriver())
-        val viewModel = SharedViewModel(database, lifecycleScope)
         val notifier = Notifier(applicationContext)
+        val viewModel = SharedViewModel(database, notifier, lifecycleScope)
         setContent {
             App(viewModel, notifier)
         }

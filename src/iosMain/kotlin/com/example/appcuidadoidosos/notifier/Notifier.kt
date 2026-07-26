@@ -1,8 +1,10 @@
 package com.example.appcuidadoidosos.notifier
 
+import platform.Foundation.NSDateComponents
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
+import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNUserNotificationCenter
@@ -36,6 +38,28 @@ actual class Notifier {
         notificationCenter.addNotificationRequest(request) { error ->
             if (error != null) {
                 println("Error showing notification: ${error.localizedDescription}")
+            }
+        }
+    }
+
+    actual fun scheduleNotification(hour: Int, minute: Int, title: String, message: String) {
+        val content = UNMutableNotificationContent().apply {
+            setTitle(title)
+            setBody(message)
+        }
+
+        val dateComponents = NSDateComponents().apply {
+            setHour(hour.toLong())
+            setMinute(minute.toLong())
+        }
+        val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(dateComponents, repeats = true)
+
+        val uuid = NSUUID.UUID().UUIDString()
+        val request = UNNotificationRequest.requestWithIdentifier(uuid, content, trigger)
+
+        notificationCenter.addNotificationRequest(request) { error ->
+            if (error != null) {
+                println("Error scheduling notification: ${error.localizedDescription}")
             }
         }
     }

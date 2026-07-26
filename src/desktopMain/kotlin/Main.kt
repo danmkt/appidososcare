@@ -12,8 +12,8 @@ fun main() = application {
     val database = AppDatabase(DatabaseDriverFactory().createDriver())
     Window(onCloseRequest = ::exitApplication, title = "app-cuidado-idosos") {
         val coroutineScope = rememberCoroutineScope()
-        val viewModel = SharedViewModel(database, coroutineScope)
         val notifier = Notifier()
+        val viewModel = SharedViewModel(database, notifier, coroutineScope)
         App(viewModel, notifier)
     }
 }

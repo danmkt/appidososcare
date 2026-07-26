@@ -11,11 +11,13 @@ class ContentViewModel: ObservableObject {
     @Published var totalWaterMl: Int = 0
     
     init() {
+        let notifier = Notifier()
         self.viewModel = SharedViewModel(
             database: AppDatabase(driver: DatabaseDriverFactory().createDriver()),
+            notifier: notifier,
             coroutineScope: CoroutineScope(context: Dispatchers.Main)
         )
-        self.notifier = Notifier()
+        self.notifier = notifier
         self.notifier.requestAuthorization()
         
         Task {
