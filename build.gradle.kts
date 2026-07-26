@@ -18,6 +18,20 @@ kotlin {
     }
     jvm("desktop")
 
+    // Add iOS targets
+    val iOSTarget: (String, org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.() -> Unit) -> org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget =
+        if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
+            ::iosArm64
+        else
+            ::iosSimulatorArm64
+
+    iOSTarget("ios") {
+        binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -42,6 +56,11 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
+            }
+        }
+        val iosMain by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:native-driver:2.0.1")
             }
         }
     }
