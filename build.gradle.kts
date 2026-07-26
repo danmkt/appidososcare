@@ -35,6 +35,7 @@ kotlin {
                 implementation("androidx.appcompat:appcompat:1.6.1")
                 implementation("androidx.core:core-ktx:1.12.0")
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
+                implementation("androidx.glance:glance-appwidget:1.0.0")
             }
         }
         val desktopMain by getting {
