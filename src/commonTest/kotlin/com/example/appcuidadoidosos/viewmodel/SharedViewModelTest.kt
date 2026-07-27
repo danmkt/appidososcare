@@ -1,80 +1,106 @@
 package com.example.appcuidadoidosos.viewmodel
 
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.example.appcuidadoidosos.database.AppDatabase
-import com.example.appcuidadoidosos.database.DatabaseDriverFactory
-import com.example.appcuidadoidosos.notifier.FakeNotifier
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SharedViewModelTest {
 
     private lateinit var viewModel: SharedViewModel
-    private lateinit var database: AppDatabase
-    private lateinit var notifier: FakeNotifier
-    private val mainThreadSurrogate = newSingleThreadContext("UI thread")
+    private lateinit var db: AppDatabase
+    private lateinit var driver: JdbcSqliteDriver
+    private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
-    fun setUp() {
-        Dispatchers.setMain(mainThreadSurrogate)
-        val driver = DatabaseDriverFactory().createDriver()
-        database = AppDatabase(driver)
-        notifier = FakeNotifier()
-        viewModel = SharedViewModel(database, notifier, CoroutineScope(mainThreadSurrogate))
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        AppDatabase.Schema.create(driver)
+        db = AppDatabase(driver)
+        viewModel = SharedViewModel(db)
     }
 
     @AfterTest
     fun tearDown() {
+        driver.close()
         Dispatchers.resetMain()
-        mainThreadSurrogate.close()
     }
 
     @Test
-    fun `addMedication schedules a notification`() = runTest {
-        viewModel.addMedication("Test Med", "1 pill", "daily", "08:00", null)
-        assertEquals(1, notifier.notifications.size)
-        assertEquals("Lembrete de Medicação", notifier.notifications.first().title)
+    fun `addWater inserts a water log`() = runTest {
+        // Initial count
+        assertEquals(0, db.waterQueries.selectAllWater().executeAsList().size)
+
+        // Add water
+        viewModel.addWater()
+        testDispatcher.scheduler.advanceUntilIdle() // Process the coroutine
+
+        // Verify count updated
+        assertEquals(1, db.waterQueries.selectAllWater().executeAsList().size)
     }
 
     @Test
-    fun `addMedication saves item to database`() = runTest {
-        viewModel.addMedication("Test Med", "1 pill", "daily", "08:00", null)
-        val medications = database.appDatabaseQueries.selectAllMedications().executeAsList()
-        assertEquals(1, medications.size)
-        assertEquals("Test Med", medications.first().name)
+    fun `deleteWater removes the water log`() = runTest {
+        viewModel.addWater()
+        testDispatcher.scheduler.advanceUntilIdle()
+        val log = db.waterQueries.selectAllWater().executeAsOne()
+        assertEquals(1, db.waterQueries.selectAllWater().executeAsList().size)
+
+        viewModel.deleteWater(log.id)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, db.waterQueries.selectAllWater().executeAsList().size)
     }
 
     @Test
-    fun `deleteMedication cancels notification`() = runTest {
-        // First, add a medication to get a valid notification ID
-        viewModel.addMedication("Test Med", "1 pill", "daily", "08:00", null)
-        val medication = database.appDatabaseQueries.selectAllMedications().executeAsOne()
-        
-        // Now, delete it
-        viewModel.deleteMedication(medication.id)
-        
-        assertEquals(1, notifier.cancelledNotifications.size)
-        assertEquals(medication.notification_id, notifier.cancelledNotifications.first())
+    fun `addMeal inserts a meal log`() = runTest {
+        assertEquals(0, db.mealQueries.selectAllMeals().executeAsList().size)
+
+        viewModel.addMeal("Almoço", "Arroz e feijão")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val meals = db.mealQueries.selectAllMeals().executeAsList()
+        assertEquals(1, meals.size)
+        assertEquals("Almoço", meals.first().type)
     }
 
     @Test
-    fun `deleteMedication removes item from database`() = runTest {
-        // First, add a medication
-        viewModel.addMedication("Test Med", "1 pill", "daily", "08:00", null)
-        var medications = database.appDatabaseQueries.selectAllMedications().executeAsList()
-        assertEquals(1, medications.size)
+    fun `addMedication inserts a medication`() = runTest {
+        assertEquals(0, db.medicationQueries.selectAllMedications().executeAsList().size)
 
-        // Now, delete it
-        viewModel.deleteMedication(medications.first().id)
+        viewModel.addMedication("Paracetamol", "08:00")
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        medications = database.appDatabaseQueries.selectAllMedications().executeAsList()
-        assertTrue(medications.isEmpty())
+        val meds = db.medicationQueries.selectAllMedications().executeAsList()
+        assertEquals(1, meds.size)
+        assertEquals("Paracetamol", meds.first().name)
+        assertFalse(meds.first().isTaken)
+    }
+
+    @Test
+    fun `toggleMedicationTaken updates the status`() = runTest {
+        viewModel.addMedication("Ibuprofeno", "12:00")
+        testDispatcher.scheduler.advanceUntilIdle()
+        val med = db.medicationQueries.selectAllMedications().executeAsOne()
+        assertFalse(med.isTaken)
+
+        // Toggle to true
+        viewModel.toggleMedicationTaken(med.id, true)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val updatedMed = db.medicationQueries.selectAllMedications().executeAsOne()
+        assertTrue(updatedMed.isTaken)
+
+        // Toggle to false
+        viewModel.toggleMedicationTaken(med.id, false)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val finalMed = db.medicationQueries.selectAllMedications().executeAsOne()
+        assertFalse(finalMed.isTaken)
     }
 }

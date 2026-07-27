@@ -3,6 +3,7 @@ package com.example.appcuidadoidosos.widget
 import android.content.Context
 import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.DatabaseDriverFactory
+import com.example.appcuidadoidosos.util.getCurrentDateString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -18,7 +19,7 @@ class WidgetDataRepository(context: Context) {
     private val database = AppDatabase(DatabaseDriverFactory(context).createDriver())
 
     suspend fun getWidgetData(): WidgetData = withContext(Dispatchers.IO) {
-        val todayDate = "2026-07-26" // Usando data fixa por enquanto
+        val todayDate = getCurrentDateString()
 
         val totalWaterResult = database.appDatabaseQueries.getTotalWaterByDate(todayDate).executeAsOne()
         val medications = database.appDatabaseQueries.selectAllMedications().executeAsList()

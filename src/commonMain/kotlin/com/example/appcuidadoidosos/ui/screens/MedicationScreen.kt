@@ -3,180 +3,132 @@ package com.example.appcuidadoidosos.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.appcuidadoidosos.database.Medications
-import com.example.appcuidadoidosos.ui.theme.*
+import com.example.appcuidadoidosos.database.Medication
 
 @Composable
 fun MedicationScreen(
-    medications: List<Medications>,
-    onAddMedication: (name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) -> Unit,
-    onToggleTaken: (id: Long, isTaken: Boolean) -> Unit,
-    onDeleteMedication: (id: Long) -> Unit,
-    onResetAllTaken: () -> Unit
+    medicationState: List<Medication>,
+    onAddMedication: (name: String, time: String) -> Unit,
+    onDeleteMedication: (Long) -> Unit,
+    onToggleTaken: (id: Long, isTaken: Boolean) -> Unit
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Meus Medicamentos",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-            Button(
-                onClick = { showAddDialog = true },
-                colors = ButtonDefaults.buttonColors(backgroundColor = PrimaryBlue),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Adicionar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Adicionar Medicamento")
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (medications.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
                 Text(
-                    text = "Nenhum medicamento cadastrado ainda.\nClique em 'Adicionar' acima para começar.",
-                    fontSize = 18.sp,
-                    color = TextLight
+                    text = "Registros de Medicamentos",
+                    style = MaterialTheme.typography.headlineSmall
                 )
             }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(medications) { medication ->
-                    MedicationCardItem(
-                        medication = medication,
-                        onToggleTaken = { onToggleTaken(medication.id, medication.isTaken == 0L) },
-                        onDelete = { onDeleteMedication(medication.id) }
+
+            if (medicationState.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Nenhum medicamento registrado.\nClique no botão '+' para adicionar.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(medicationState) { medicationLog ->
+                    MedicationLogItem(
+                        medicationLog = medicationLog,
+                        onDelete = { onDeleteMedication(medicationLog.id) },
+                        onToggleTaken = { isTaken -> onToggleTaken(medicationLog.id, isTaken) }
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                onClick = onResetAllTaken,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Reiniciar Status do Dia (Desmarcar Todos)", fontSize = 15.sp, color = TextSecondary)
             }
         }
     }
 
-    if (showAddDialog) {
+    if (showDialog) {
         AddMedicationDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { name, dosage, frequency, reminder_time, notes ->
-                onAddMedication(name, dosage, frequency, reminder_time, notes)
-                showAddDialog = false
+            onDismiss = { showDialog = false },
+            onConfirm = { name, time ->
+                onAddMedication(name, time)
+                showDialog = false
             }
         )
     }
 }
 
 @Composable
-fun MedicationCardItem(
-    medication: Medications,
-    onToggleTaken: () -> Unit,
-    onDelete: () -> Unit
+private fun MedicationLogItem(
+    medicationLog: Medication,
+    onDelete: () -> Unit,
+    onToggleTaken: (Boolean) -> Unit
 ) {
-    val isTaken = medication.isTaken != 0L
+    val isTaken = medicationLog.isTaken
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = 3.dp,
-        shape = RoundedCornerShape(16.dp),
-        backgroundColor = if (isTaken) SecondaryLight else SurfaceCard
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(
-                onClick = onToggleTaken,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = if (isTaken) Icons.Default.CheckCircle else Icons.Default.Clear,
-                    contentDescription = if (isTaken) "Tomado" else "Pendente",
-                    tint = if (isTaken) SecondaryGreen else TextLight,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
+            Icon(
+                imageVector = Icons.Outlined.Medication,
+                contentDescription = "Ícone de medicamento",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+            Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = medication.name,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Dose: ${medication.dosage}  |  Horário: ${medication.reminder_time}",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = PrimaryDark
+                    text = medicationLog.name,
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "Frequência: ${medication.frequency}",
-                    fontSize = 14.sp,
-                    color = TextSecondary
+                    text = "Horário: ${medicationLog.time}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (!medication.notes.isNullOrBlank()) {
-                    Text(
-                        text = "Obs: ${medication.notes}",
-                        fontSize = 13.sp,
-                        color = TextLight
-                    )
-                }
             }
-
+            Switch(
+                checked = isTaken,
+                onCheckedChange = onToggleTaken,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
             IconButton(onClick = onDelete) {
                 Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Deletar",
-                    tint = RedAlert
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deletar medicamento",
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -184,80 +136,47 @@ fun MedicationCardItem(
 }
 
 @Composable
-fun AddMedicationDialog(
+private fun AddMedicationDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) -> Unit
+    onConfirm: (name: String, time: String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var dosage by remember { mutableStateOf("") }
-    var frequency by remember { mutableStateOf("") }
-    var reminder_time by remember { mutableStateOf("08:00") }
-    var notes by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Novo Medicamento",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryBlue
-            )
-        },
+        title = { Text("Adicionar Medicamento") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome do Medicamento") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Nome do medicamento") },
+                    placeholder = { Text("Ex: Paracetamol") }
                 )
                 OutlinedTextField(
-                    value = dosage,
-                    onValueChange = { dosage = it },
-                    label = { Text("Dosagem (ex: 1 comprimido, 5ml)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = reminder_time,
-                    onValueChange = { reminder_time = it },
-                    label = { Text("Horário (ex: 08:00)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = frequency,
-                    onValueChange = { frequency = it },
-                    label = { Text("Frequência (ex: 1x ao dia, De 8 em 8h)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Observações (opcional)") },
-                    modifier = Modifier.fillMaxWidth()
+                    value = time,
+                    onValueChange = { time = it },
+                    label = { Text("Horário") },
+                    placeholder = { Text("Ex: 08:00") }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank() && dosage.isNotBlank()) {
-                        onConfirm(name, dosage, frequency, reminder_time, notes.ifBlank { null })
+                    if (name.isNotBlank() && time.isNotBlank()) {
+                        onConfirm(name, time)
                     }
                 },
-                enabled = name.isNotBlank() && dosage.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(backgroundColor = PrimaryBlue),
-                shape = RoundedCornerShape(8.dp)
+                enabled = name.isNotBlank() && time.isNotBlank()
             ) {
-                Text("Salvar", color = Color.White, fontSize = 16.sp)
+                Text("Salvar")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", fontSize = 16.sp, color = TextSecondary)
+                Text("Cancelar")
             }
         }
     )

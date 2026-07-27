@@ -1,73 +1,51 @@
-CREATE TABLE medications (
+-- Medication Table
+CREATE TABLE Medication (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
-  dosage TEXT NOT NULL,
-  frequency TEXT NOT NULL,
-  reminder_time TEXT NOT NULL DEFAULT '08:00',
-  isTaken INTEGER NOT NULL DEFAULT 0,
-  notes TEXT,
-  notification_id TEXT
+  time TEXT NOT NULL,
+  isTaken BOOLEAN NOT NULL DEFAULT 0
 );
 
 selectAllMedications:
-SELECT * FROM medications ORDER BY id DESC;
-
-getNotificationIdById:
-SELECT notification_id FROM medications WHERE id = ?;
+SELECT * FROM Medication ORDER BY time ASC;
 
 insertMedication:
-INSERT INTO medications(name, dosage, frequency, reminder_time, isTaken, notes, notification_id)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Medication(name, time, isTaken) VALUES (?, ?, 0);
 
 deleteMedicationById:
-DELETE FROM medications WHERE id = ?;
+DELETE FROM Medication WHERE id = ?;
 
-updateMedicationTakenStatus:
-UPDATE medications SET isTaken = ? WHERE id = ?;
+updateMedicationTaken:
+UPDATE Medication SET isTaken = ? WHERE id = ?;
 
-resetMedicationsTakenStatus:
-UPDATE medications SET isTaken = 0;
-
-
-CREATE TABLE water_logs (
+-- Water Table
+CREATE TABLE Water (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  amountMl INTEGER NOT NULL,
-  timestamp TEXT NOT NULL,
-  date TEXT NOT NULL
+  timestamp TEXT NOT NULL
 );
 
-selectWaterLogsByDate:
-SELECT * FROM water_logs WHERE date = ? ORDER BY id DESC;
+selectAllWater:
+SELECT * FROM Water ORDER BY timestamp DESC;
 
-insertWaterLog:
-INSERT INTO water_logs(amountMl, timestamp, date)
-VALUES (?, ?, ?);
+insertWater:
+INSERT INTO Water(timestamp) VALUES (?);
 
-deleteWaterLogById:
-DELETE FROM water_logs WHERE id = ?;
+deleteWaterById:
+DELETE FROM Water WHERE id = ?;
 
-getTotalWaterByDate:
-SELECT COALESCE(SUM(amountMl), 0) AS totalMl FROM water_logs WHERE date = ?;
-
-
-CREATE TABLE meal_logs (
+-- Meal Table
+CREATE TABLE Meal (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  mealType TEXT NOT NULL,
+  type TEXT NOT NULL,
   description TEXT NOT NULL,
-  time TEXT NOT NULL,
-  date TEXT NOT NULL,
-  isConsumed INTEGER NOT NULL DEFAULT 1
+  timestamp TEXT NOT NULL
 );
 
-selectMealLogsByDate:
-SELECT * FROM meal_logs WHERE date = ? ORDER BY id DESC;
+selectAllMeals:
+SELECT * FROM Meal ORDER BY timestamp DESC;
 
-insertMealLog:
-INSERT INTO meal_logs(mealType, description, time, date, isConsumed)
-VALUES (?, ?, ?, ?, ?);
+insertMeal:
+INSERT INTO Meal(type, description, timestamp) VALUES (?, ?, ?);
 
-deleteMealLogById:
-DELETE FROM meal_logs WHERE id = ?;
-
-updateMealConsumedStatus:
-UPDATE meal_logs SET isConsumed = ? WHERE id = ?;
+deleteMealById:
+DELETE FROM Meal WHERE id = ?;

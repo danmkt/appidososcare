@@ -1,160 +1,102 @@
 package com.example.appcuidadoidosos.viewmodel
 
 import com.example.appcuidadoidosos.database.AppDatabase
-import com.example.appcuidadoidosos.database.Meal_logs
-import com.example.appcuidadoidosos.database.Medications
-import com.example.appcuidadoidosos.database.Water_logs
-import com.example.appcuidadoidosos.notifier.Notifier
+import com.example.appcuidadoidosos.database.Meal
+import com.example.appcuidadoidosos.database.Medication
+import com.example.appcuidadoidosos.database.Water
 import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
-class SharedViewModel(
-    private val database: AppDatabase,
-    private val notifier: Notifier,
-    private val coroutineScope: CoroutineScope
-) {
+class SharedViewModel(private val db: AppDatabase) {
 
-    private val _medications = MutableStateFlow<List<Medications>>(emptyList())
+    private val viewModelScope = CoroutineScope(Dispatchers.Main)
+
     @NativeCoroutines
-    val medications: StateFlow<List<Medications>> = _medications
+    val medicationState: StateFlow<List<Medication>> =
+        db.medicationQueries.selectAllMedications()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = emptyList()
+            )
 
-    private val _waterLogs = MutableStateFlow<List<Water_logs>>(emptyList())
     @NativeCoroutines
-    val waterLogs: StateFlow<List<Water_logs>> = _waterLogs
+    val waterState: StateFlow<List<Water>> =
+        db.waterQueries.selectAllWater()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = emptyList()
+            )
 
-    private val _totalWaterMl = MutableStateFlow(0L)
     @NativeCoroutines
-    val totalWaterMl: StateFlow<Long> = _totalWaterMl
+    val mealState: StateFlow<List<Meal>> =
+        db.mealQueries.selectAllMeals()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = emptyList()
+            )
 
-    private val _mealLogs = MutableStateFlow<List<Meal_logs>>(emptyList())
-    @NativeCoroutines
-    val mealLogs: StateFlow<List<Meal_logs>> = _mealLogs
-
-    private val todayDate = "2026-07-26" // Data para persistência
-
-    init {
-        refreshData()
+    private fun now(): String {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        return "${now.hour.toString().padStart(2, '0')}:${now.minute.toString().padStart(2, '0')}"
     }
 
-    fun refreshData() {
-        coroutineScope.launch {
-            val (loadedMeds, loadedWater, loadedWaterTotal, loadedMeals) = withContext(Dispatchers.IO) {
-                val meds = database.appDatabaseQueries.selectAllMedications().executeAsList()
-                val water = database.appDatabaseQueries.selectWaterLogsByDate(todayDate).executeAsList()
-                val totalWaterResult = database.appDatabaseQueries.getTotalWaterByDate(todayDate).executeAsOne()
-                val meals = database.appDatabaseQueries.selectMealLogsByDate(todayDate).executeAsList()
-                Tuple4(meds, water, totalWaterResult.totalMl ?: 0L, meals)
-            }
-            _medications.value = loadedMeds
-            _waterLogs.value = loadedWater
-            _totalWaterMl.value = loadedWaterTotal
-            _mealLogs.value = loadedMeals
+    fun addWater() {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.waterQueries.insertWater(now())
         }
     }
 
-    fun addMedication(name: String, dosage: String, frequency: String, reminder_time: String, notes: String?) {
-        coroutineScope.launch {
-            val notificationId = "med_${System.currentTimeMillis()}"
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMedication(name, dosage, frequency, reminder_time, 0L, notes, notificationId)
-            }
-            refreshData()
-
-            // Schedule notification
-            val timeParts = reminder_time.split(":")
-            if (timeParts.size == 2) {
-                val hour = timeParts[0].toIntOrNull()
-                val minute = timeParts[1].toIntOrNull()
-                if (hour != null && minute != null) {
-                    notifier.scheduleNotification(notificationId, hour, minute, "Lembrete de Medicação", "Hora de tomar: $name")
-                }
-            }
+    fun deleteWater(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.waterQueries.deleteWaterById(id)
         }
     }
 
-    fun toggleMedicationTaken(id: Long, isTaken: Boolean) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.updateMedicationTakenStatus(if (isTaken) 1L else 0L, id)
-            }
-            refreshData()
-        }
-    }
-
-    fun deleteMedication(id: Long) {
-        coroutineScope.launch {
-            val notificationId = withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.getNotificationIdById(id).executeAsOneOrNull()?.notification_id
-            }
-            if (notificationId != null) {
-                notifier.cancelNotification(notificationId)
-            }
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteMedicationById(id)
-            }
-            refreshData()
-        }
-    }
-
-    fun resetAllMedicationsTaken() {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.resetMedicationsTakenStatus()
-            }
-            refreshData()
-        }
-    }
-
-    fun addWater(amountMl: Int) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                val timestamp = "12:00"
-                database.appDatabaseQueries.insertWaterLog(amountMl.toLong(), timestamp, todayDate)
-            }
-            refreshData()
-        }
-    }
-
-    fun deleteWaterLog(id: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteWaterLogById(id)
-            }
-            refreshData()
-        }
-    }
-
-    fun addMeal(mealType: String, description: String, time: String) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.insertMealLog(mealType, description, time, todayDate, 1L)
-            }
-            refreshData()
-        }
-    }
-
-    fun toggleMealConsumed(id: Long, isConsumed: Boolean) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.updateMealConsumedStatus(if (isConsumed) 1L else 0L, id)
-            }
-            refreshData()
+    fun addMeal(type: String, description: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.mealQueries.insertMeal(type, description, now())
         }
     }
 
     fun deleteMeal(id: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                database.appDatabaseQueries.deleteMealLogById(id)
-            }
-            refreshData()
+        viewModelScope.launch(Dispatchers.IO) {
+            db.mealQueries.deleteMealById(id)
+        }
+    }
+
+    fun addMedication(name: String, time: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.medicationQueries.insertMedication(name, time)
+        }
+    }
+
+    fun deleteMedication(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.medicationQueries.deleteMedicationById(id)
+        }
+    }
+
+    fun toggleMedicationTaken(id: Long, isTaken: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.medicationQueries.updateMedicationTaken(isTaken, id)
         }
     }
 }
-
-private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)

@@ -6,8 +6,10 @@ import java.io.File
 
 actual class DatabaseDriverFactory actual constructor(context: Any?) {
     actual fun createDriver(): SqlDriver {
+        val dbFile = File("app.db")
+        val isNew = !dbFile.exists()
         val driver = JdbcSqliteDriver("jdbc:sqlite:app.db")
-        if (!File("app.db").exists()) {
+        if (isNew) {
             AppDatabase.Schema.create(driver)
         }
         return driver

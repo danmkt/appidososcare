@@ -38,11 +38,12 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
-                implementation(compose.material)
+                implementation(compose.material3)
+                implementation(compose.material.icons.extended)
                 implementation(compose.ui)
                 implementation(compose.components.resources)
                 implementation("app.cash.sqldelight:runtime:2.0.1")
-                implementation("com.rickclephas.kmp:kmp-native-coroutines-core:1.0.0-ALPHA-26")
+                implementation("com.rickclephas.kmp:kmp-nativecoroutines-core:1.0.0-ALPHA-26")
             }
         }
         val androidMain by getting {
@@ -65,15 +66,22 @@ kotlin {
                 implementation("app.cash.sqldelight:native-driver:2.0.1")
             }
         }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.1")
+            }
+        }
     }
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 36
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     defaultConfig {
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 36
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

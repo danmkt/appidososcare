@@ -1,6 +1,6 @@
 package com.example.appcuidadoidosos.notifier
 
-class FakeNotifier : Notifier() {
+class FakeNotifier : Notifier {
     val notifications = mutableListOf<Notification>()
     val cancelledNotifications = mutableListOf<String>()
 

@@ -3,250 +3,173 @@ package com.example.appcuidadoidosos.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.RestaurantMenu
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.appcuidadoidosos.database.Meal_logs
-import com.example.appcuidadoidosos.ui.theme.*
+import com.example.appcuidadoidosos.database.Meal
 
 @Composable
 fun MealScreen(
-    mealLogs: List<Meal_logs>,
-    onAddMeal: (mealType: String, description: String, time: String) -> Unit,
-    onToggleConsumed: (id: Long, isConsumed: Boolean) -> Unit,
-    onDeleteMeal: (id: Long) -> Unit
+    mealState: List<Meal>,
+    onAddMeal: (type: String, description: String) -> Unit,
+    onDeleteMeal: (Long) -> Unit
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Cabeçalho
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Registro de Alimentação",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-            Button(
-                onClick = { showAddDialog = true },
-                colors = ButtonDefaults.buttonColors(backgroundColor = AccentOrange),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Registrar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Adicionar Refeição")
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (mealLogs.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
                 Text(
-                    text = "Nenhuma refeição registrada hoje.\nClique em 'Registrar' para acompanhar o dia alimentício.",
-                    fontSize = 17.sp,
-                    color = TextLight
+                    text = "Registros de Refeição",
+                    style = MaterialTheme.typography.headlineSmall
                 )
             }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(mealLogs) { meal ->
-                    MealItemCard(
-                        meal = meal,
-                        onToggleConsumed = { onToggleConsumed(meal.id, meal.isConsumed == 0L) },
-                        onDelete = { onDeleteMeal(meal.id) }
+
+            if (mealState.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Nenhuma refeição registrada hoje.\nClique no botão '+' para adicionar.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(mealState) { mealLog ->
+                    MealLogItem(
+                        mealLog = mealLog,
+                        onDelete = { onDeleteMeal(mealLog.id) }
                     )
                 }
             }
         }
     }
 
-    if (showAddDialog) {
+    if (showDialog) {
         AddMealDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { type, desc, time ->
-                onAddMeal(type, desc, time)
-                showAddDialog = false
+            onDismiss = { showDialog = false },
+            onConfirm = { type, description ->
+                onAddMeal(type, description)
+                showDialog = false
             }
         )
     }
 }
 
 @Composable
-fun MealItemCard(
-    meal: Meal_logs,
-    onToggleConsumed: () -> Unit,
+private fun MealLogItem(
+    mealLog: Meal,
     onDelete: () -> Unit
 ) {
-    val isConsumed = meal.isConsumed != 0L
-
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = 3.dp,
-        shape = RoundedCornerShape(16.dp),
-        backgroundColor = if (isConsumed) SecondaryLight else SurfaceCard
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(
-                onClick = onToggleConsumed,
-                modifier = Modifier.size(44.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(
-                    imageVector = if (isConsumed) Icons.Default.CheckCircle else Icons.Default.Clear,
-                    contentDescription = null,
-                    tint = if (isConsumed) SecondaryGreen else TextLight,
-                    modifier = Modifier.size(32.dp)
+                    imageVector = Icons.Outlined.RestaurantMenu,
+                    contentDescription = "Ícone de refeição",
+                    tint = MaterialTheme.colorScheme.secondary
                 )
+                Column {
+                    Text(
+                        text = mealLog.type,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = mealLog.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = meal.mealType,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentOrange
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = meal.description,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "Horário: ${meal.time}",
-                    fontSize = 14.sp,
-                    color = TextSecondary
-                )
-            }
-
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Deletar", tint = RedAlert)
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deletar refeição",
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
 }
 
 @Composable
-fun AddMealDialog(
+private fun AddMealDialog(
     onDismiss: () -> Unit,
-    onConfirm: (mealType: String, description: String, time: String) -> Unit
+    onConfirm: (type: String, description: String) -> Unit
 ) {
-    val mealTypes = listOf("Café da Manhã", "Almoço", "Lanche da Tarde", "Jantar", "Ceia")
-    var selectedType by remember { mutableStateOf(mealTypes.first()) }
+    var type by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("08:00") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Registrar Refeição",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentOrange
-            )
-        },
+        title = { Text("Adicionar Refeição") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text("Tipo de Refeição:", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-
-                // Botões de seleção do tipo
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    mealTypes.chunked(2).forEach { rowTypes ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            rowTypes.forEach { type ->
-                                val isSelected = selectedType == type
-                                Button(
-                                    onClick = { selectedType = type },
-                                    modifier = Modifier.weight(1f).height(38.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        backgroundColor = if (isSelected) AccentOrange else PrimaryLight,
-                                        contentColor = if (isSelected) Color.White else PrimaryDark
-                                    ),
-                                    elevation = ButtonDefaults.elevation(0.dp, 0.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(type, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                                }
-                            }
-                        }
-                    }
-                }
-
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = type,
+                    onValueChange = { type = it },
+                    label = { Text("Tipo da refeição") },
+                    placeholder = { Text("Ex: Almoço, Jantar...") }
+                )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("O que foi consumido?") },
-                    placeholder = { Text("Ex: Sopa de legumes, 1 fruta...") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = time,
-                    onValueChange = { time = it },
-                    label = { Text("Horário (ex: 12:30)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Descrição") },
+                    placeholder = { Text("Ex: Arroz, feijão e salada") }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (description.isNotBlank()) {
-                        onConfirm(selectedType, description, time)
+                    if (type.isNotBlank() && description.isNotBlank()) {
+                        onConfirm(type, description)
                     }
                 },
-                enabled = description.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(backgroundColor = AccentOrange),
-                shape = RoundedCornerShape(8.dp)
+                enabled = type.isNotBlank() && description.isNotBlank()
             ) {
-                Text("Salvar", color = Color.White, fontSize = 16.sp)
+                Text("Salvar")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", fontSize = 16.sp, color = TextSecondary)
+                Text("Cancelar")
             }
         }
     )
