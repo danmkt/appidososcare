@@ -1,5 +1,7 @@
 package com.example.appcuidadoidosos.viewmodel
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 import com.example.appcuidadoidosos.database.AppDatabase
 import com.example.appcuidadoidosos.database.Meal
 import com.example.appcuidadoidosos.database.Medication
@@ -19,10 +21,11 @@ import kotlinx.datetime.toLocalDateTime
 class SharedViewModel(private val db: AppDatabase) {
 
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
+    private val queries = db.appDatabaseQueries
 
     @NativeCoroutines
     val medicationState: StateFlow<List<Medication>> =
-        db.medicationQueries.selectAllMedications()
+        queries.selectAllMedications()
             .asFlow()
             .mapToList(Dispatchers.IO)
             .stateIn(
@@ -33,7 +36,7 @@ class SharedViewModel(private val db: AppDatabase) {
 
     @NativeCoroutines
     val waterState: StateFlow<List<Water>> =
-        db.waterQueries.selectAllWater()
+        queries.selectAllWater()
             .asFlow()
             .mapToList(Dispatchers.IO)
             .stateIn(
@@ -44,7 +47,7 @@ class SharedViewModel(private val db: AppDatabase) {
 
     @NativeCoroutines
     val mealState: StateFlow<List<Meal>> =
-        db.mealQueries.selectAllMeals()
+        queries.selectAllMeals()
             .asFlow()
             .mapToList(Dispatchers.IO)
             .stateIn(
@@ -60,43 +63,43 @@ class SharedViewModel(private val db: AppDatabase) {
 
     fun addWater() {
         viewModelScope.launch(Dispatchers.IO) {
-            db.waterQueries.insertWater(now())
+            queries.insertWater(now())
         }
     }
 
     fun deleteWater(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.waterQueries.deleteWaterById(id)
+            queries.deleteWaterById(id)
         }
     }
 
     fun addMeal(type: String, description: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.mealQueries.insertMeal(type, description, now())
+            queries.insertMeal(type, description, now())
         }
     }
 
     fun deleteMeal(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.mealQueries.deleteMealById(id)
+            queries.deleteMealById(id)
         }
     }
 
     fun addMedication(name: String, time: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.medicationQueries.insertMedication(name, time)
+            queries.insertMedication(name, time)
         }
     }
 
     fun deleteMedication(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.medicationQueries.deleteMedicationById(id)
+            queries.deleteMedicationById(id)
         }
     }
 
     fun toggleMedicationTaken(id: Long, isTaken: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            db.medicationQueries.updateMedicationTaken(isTaken, id)
+            queries.updateMedicationTaken(if (isTaken) 1L else 0L, id)
         }
     }
 }

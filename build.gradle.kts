@@ -39,11 +39,14 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
-                implementation(compose.material.icons.extended)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.ui)
                 implementation(compose.components.resources)
                 implementation("app.cash.sqldelight:runtime:2.0.1")
+                implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
                 implementation("com.rickclephas.kmp:kmp-nativecoroutines-core:1.0.0-ALPHA-26")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             }
         }
         val androidMain by getting {
@@ -92,7 +95,7 @@ android {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "com.example.appcuidadoidosos.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocalDrink
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.RestaurantMenu
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment

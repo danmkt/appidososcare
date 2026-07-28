@@ -90,7 +90,7 @@ private fun MedicationLogItem(
     onDelete: () -> Unit,
     onToggleTaken: (Boolean) -> Unit
 ) {
-    val isTaken = medicationLog.isTaken
+    val isTaken = medicationLog.isTaken != 0L
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -121,7 +121,7 @@ private fun MedicationLogItem(
             }
             Switch(
                 checked = isTaken,
-                onCheckedChange = onToggleTaken,
+                onCheckedChange = { checked -> onToggleTaken(checked) },
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             IconButton(onClick = onDelete) {
